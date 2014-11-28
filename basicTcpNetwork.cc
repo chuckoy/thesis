@@ -150,7 +150,6 @@ int main( int argc, char *argv[] )
 	UdpEchoServerHelper echoServer( 9 );
 	ApplicationContainer serverApps = echoServer.Install( serverNodes );
 	serverApps.Start( Seconds( 1.0 ) );
-	serverApps.Stop( Seconds( 20.0 ) );
 
 	std::vector<ApplicationContainer> clientApps( nServers );
 	std::vector<ApplicationContainer>::iterator clientAppsIt;
@@ -160,13 +159,10 @@ int main( int argc, char *argv[] )
 	{
 		UdpEchoClientHelper echoClient( ( *csmaInterIt ).GetAddress( 0 ), 9 );
 		echoClient.SetAttribute ("MaxPackets", UintegerValue (30));
-		echoClient.SetAttribute ("Interval", TimeValue (Seconds (0.5)));
-		echoClient.SetAttribute ("PacketSize", UintegerValue (1024*10));
+		echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
+		echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
 		*clientAppsIt = echoClient.Install( *clientNodesIt );
-		NS_LOG_UNCOND( "Start time setting" );
 		( *clientAppsIt ).Start( Seconds( 2.0 ) );
-		( *clientAppsIt ).Stop( Seconds( 20.0 ) );
-		NS_LOG_UNCOND( "Start time set" );
 
 		++clientNodesIt;
 		++csmaInterIt;
@@ -182,16 +178,21 @@ int main( int argc, char *argv[] )
 		for( NodeContainer::Iterator node = ( *csNodesIt ).Begin(); node != ( *csNodesIt ).End(); ++node )
 		{
 			if( y == 0 )
-				anim.SetConstantPosition( *node, y, 3 * x );
+			{
+				anim.SetConstantPosition( *node, ( *csNodesIt ).GetN() / 2, 10 * x );
+			}
 			else
-				anim.SetConstantPosition( *node, y, 3 * x + 1 );
-			csma.EnablePcap( "BasicNetwork", ( *node )->GetId(), 0, false );
+			{
+				anim.SetConstantPosition( *node, y - 1, 10 * x + 3 );
+			}
 			y++;
 		}
 		x++;
 	}
 
-	Simulator::Stop( Seconds( 20.0 ) );
+	csma.EnablePcapAll( "BasicNetwork" );
+
+	Simulator::Stop( Seconds( 10.0 ) );
 	Simulator::Run();
 	Simulator::Destroy();
 	return 0;
