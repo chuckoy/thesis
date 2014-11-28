@@ -127,12 +127,11 @@ int main( int argc, char *argv[] )
 
 	// install csma net devices on nodes and assign addresses
 	x = 0;
+	csNodesIt = csNodes.begin();
+	csmaInterIt = csmaInterfaces.begin();
 	NS_LOG_UNCOND( "Installing CSMA net devices and IP addresses..." );
 	for( csmaDevIt = csmaDevices.begin(); csmaDevIt != csmaDevices.end(); ++csmaDevIt)
 	{
-		csNodesIt = csNodes.begin();
-		csmaInterIt = csmaInterfaces.begin();
-
 		*csmaDevIt = csma.Install( *csNodesIt );
 		NS_LOG_UNCOND( "CSMA net devices installed on csNodeContainer " << x << "." );
 
@@ -142,10 +141,58 @@ int main( int argc, char *argv[] )
 		*csmaInterIt = address.Assign( *csmaDevIt );
 		NS_LOG_UNCOND( "Subnet " << addressString.str() << " assigned to csmaDeviceContainer " << x );
 
-		++csmaInterIt;
 		++csNodesIt;
+		++csmaInterIt;
 		x++;
 	}
 	NS_LOG_UNCOND( "CSMA net devices with IP addresses installed." );
 
+	UdpEchoServerHelper echoServer( 9 );
+	ApplicationContainer serverApps = echoServer.Install( serverNodes );
+	serverApps.Start( Seconds( 1.0 ) );
+	serverApps.Stop( Seconds( 20.0 ) );
+
+	std::vector<ApplicationContainer> clientApps( nServers );
+	std::vector<ApplicationContainer>::iterator clientAppsIt;
+	clientNodesIt = clientNodes.begin();
+	csmaInterIt = csmaInterfaces.begin();
+	for( clientAppsIt = clientApps.begin(); clientAppsIt != clientApps.end(); ++clientAppsIt )
+	{
+		UdpEchoClientHelper echoClient( ( *csmaInterIt ).GetAddress( 0 ), 9 );
+		echoClient.SetAttribute ("MaxPackets", UintegerValue (30));
+		echoClient.SetAttribute ("Interval", TimeValue (Seconds (0.5)));
+		echoClient.SetAttribute ("PacketSize", UintegerValue (1024*10));
+		*clientAppsIt = echoClient.Install( *clientNodesIt );
+		NS_LOG_UNCOND( "Start time setting" );
+		( *clientAppsIt ).Start( Seconds( 2.0 ) );
+		( *clientAppsIt ).Stop( Seconds( 20.0 ) );
+		NS_LOG_UNCOND( "Start time set" );
+
+		++clientNodesIt;
+		++csmaInterIt;
+	}
+
+	Ipv4GlobalRoutingHelper::PopulateRoutingTables();
+	AnimationInterface anim( "animation.xml" );
+
+	x = 0;
+	for( csNodesIt = csNodes.begin(); csNodesIt != csNodes.end(); ++csNodesIt )
+	{
+		y = 0;
+		for( NodeContainer::Iterator node = ( *csNodesIt ).Begin(); node != ( *csNodesIt ).End(); ++node )
+		{
+			if( y == 0 )
+				anim.SetConstantPosition( *node, y, 3 * x );
+			else
+				anim.SetConstantPosition( *node, y, 3 * x + 1 );
+			csma.EnablePcap( "BasicNetwork", ( *node )->GetId(), 0, false );
+			y++;
+		}
+		x++;
+	}
+
+	Simulator::Stop( Seconds( 20.0 ) );
+	Simulator::Run();
+	Simulator::Destroy();
+	return 0;
 }

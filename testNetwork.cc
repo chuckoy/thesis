@@ -47,9 +47,9 @@ int main ( int argc, char *argv[] )
 	NodeContainer serverNodes;
 	std::vector<NodeContainer> clientNodes( nServers );
 	
+	std::vector<NodeContainer>::iterator clientIt = clientNodes.begin();
 	for( x = 0, createdNodes = 0; x < nServers; x++ )
 	{
-		std::vector<NodeContainer>::iterator clientIt = clientNodes.begin();
 		csNodes[ x ].Create( 1 );
 		serverNodes = NodeContainer( csNodes[ x ].Get( 0 ) );
 		if( x != nServers - 1 )
@@ -80,9 +80,9 @@ int main ( int argc, char *argv[] )
 
 	Ipv4AddressHelper address;
 	std::vector<Ipv4InterfaceContainer> csInterfaces( nServers );
+	std::vector<Ipv4InterfaceContainer>::iterator csInterIt = csInterfaces.begin();
 	for( x = 0; x < nServers; x++ )
 	{
-		std::vector<Ipv4InterfaceContainer>::iterator csInterIt = csInterfaces.begin();
 		std::ostringstream subnet;
 		subnet << "10.1." << x + 1 << ".0";
 		address.SetBase( subnet.str().c_str(), "255.255.255.0" );
@@ -96,12 +96,12 @@ int main ( int argc, char *argv[] )
 	Address sinkLocalAddress( InetSocketAddress( Ipv4Address::GetAny(), port ) );
 	PacketSinkHelper sinkHelper( "ns3::TcpSocketFactory", sinkLocalAddress );
 	std::vector<ApplicationContainer> clientApps( nServers );
+	std::vector<ApplicationContainer>::iterator clientAppsIt = clientApps.begin();
 	for( std::vector<NodeContainer>::iterator clientNodesIt = clientNodes.begin(); clientNodesIt != clientNodes.end(); ++clientNodesIt )
 	{
-		std::vector<ApplicationContainer>::iterator clientAppsIt = clientApps.begin();
 		*clientAppsIt = sinkHelper.Install( *clientNodesIt );
 		(*clientAppsIt).Start( Seconds( 1.0 ) );
-		(*clientAppsIt).Stop( Seconds( 50.0 ) );
+		(*clientAppsIt).Stop( Seconds( 20.0 ) );
 		++clientAppsIt;
 	}
 
@@ -116,12 +116,14 @@ int main ( int argc, char *argv[] )
 	}
 
 	AnimationInterface anim( "animation.xml" );
-	/*
+	
 	for( x = 0; x < nServers; x++ )
 	{
 		anim.SetConstantPosition( serverNodes.Get( x ), 0, 2 * x );
 		
 	}
+	uint32_t y;
+	/*
 	x = 0;
 	for( std::vector<NodeContainer>::iterator clientNodeContainer = clientNodes.begin(); clientNodeContainer != clientNodes.end(); ++clientNodeContainer )
 	{
@@ -133,7 +135,7 @@ int main ( int argc, char *argv[] )
 		}
 		x++;
 	}*/
-		/*
+		
 	for( x = 0; x < nServers; x++ )
 	{
 		y= 0;
@@ -143,9 +145,7 @@ int main ( int argc, char *argv[] )
 			y++;
 		}
 	}
-	*/
-	anim.SetConstantPosition( csNodes[ 0 ].Get( 0 ), 0, 0 );
-	anim.SetConstantPosition( csNodes[ 0 ].Get( 1 ), 1, 0 );
+	
 
 	Simulator::Stop (Seconds (1000));
 	Simulator::Run ();
