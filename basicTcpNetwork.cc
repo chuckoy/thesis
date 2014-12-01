@@ -17,10 +17,11 @@ NS_LOG_COMPONENT_DEFINE( "BasicNetwork" );
 
 int main( int argc, char *argv[] )
 {
-	bool tracing = false;
-	uint32_t megaBytesToSend = 0;
-	double nClients = 1;
-	double nServers = 1;
+	// command line parameters defined here
+	bool		tracing = false;
+	uint32_t	megaBytesToSend = 0;
+	double		nClients = 1;
+	double		nServers = 1;
 
 	CommandLine cmd;
 	cmd.AddValue( "tracing", "Enable/disable tracing", tracing );
@@ -29,21 +30,19 @@ int main( int argc, char *argv[] )
 	cmd.AddValue( "nServers", "Number of servers", nServers );
 	cmd.Parse( argc, argv );
 
-	std::vector<NodeContainer> csNodes( nServers );
-	std::vector<NodeContainer> clientNodes( nServers );
-	NodeContainer serverNodes;
-	
-	std::vector<NodeContainer>::iterator clientNodesIt;
-	std::vector<NodeContainer>::iterator csNodesIt;
-	NodeContainer::Iterator csNode;
+	std::vector<NodeContainer>				csNodes( nServers );
+	std::vector<NodeContainer>				clientNodes( nServers );
+	NodeContainer							serverNodes;
+	std::vector<NodeContainer>::iterator	clientNodesIt;
+	std::vector<NodeContainer>::iterator	csNodesIt;
+	NodeContainer::Iterator					csNode;
+	std::string								boolResult;
+	double									ratio = ceil( nClients / nServers );
+	double									nodesCreated = 0;
+	uint32_t								x;
+	uint32_t								y;
 
-	std::string boolResult;
-
-	double ratio = ceil( nClients / nServers );
-	std::cout << "Ratio = " << ratio << std::endl;
-	double nodesCreated = 0;
-	uint32_t x;
-	uint32_t y;
+	NS_LOG_UNCOND( "Ratio = " << ratio );
 
 	NS_LOG_UNCOND( "Creating nodes..." );
 	serverNodes.Create( nServers );
@@ -151,6 +150,7 @@ int main( int argc, char *argv[] )
 	ApplicationContainer serverApps = echoServer.Install( serverNodes );
 	serverApps.Start( Seconds( 1.0 ) );
 
+	// test udp applications
 	std::vector<ApplicationContainer> clientApps( nServers );
 	std::vector<ApplicationContainer>::iterator clientAppsIt;
 	clientNodesIt = clientNodes.begin();
@@ -171,6 +171,7 @@ int main( int argc, char *argv[] )
 	Ipv4GlobalRoutingHelper::PopulateRoutingTables();
 	AnimationInterface anim( "animation.xml" );
 
+	// set the positions of the nodes in the animator
 	x = 0;
 	for( csNodesIt = csNodes.begin(); csNodesIt != csNodes.end(); ++csNodesIt )
 	{
